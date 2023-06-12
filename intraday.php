@@ -71,13 +71,21 @@ if (($handle = fopen($csvFile, "r")) !== false) {
     exit;
 }
 
+// Prepare the cURL multi-handle
+$multiHandle = curl_multi_init();
 
-// Calculate scores for each symbol
-$symbolScores = [];
-foreach ($symbols as $symbol) {
-    $stockData = getStockData($symbol);
+// Initialize an array to store the cURL handles
+$curlHandles = [];
 
-    if ($stockData !== null) {
+// Create a function to process the completed cURL request
+function processCurlResponse($handle, $symbol, &$symbolScores) {
+    $response = curl_multi_getcontent($handle);
+    $stockData = json_decode($response, true);
+
+    if (isset($stockData['chart']['result'][0]['indicators']['quote'][0]['close'])) {
+        $closeData = $stockData['chart']['result'][0]['indicators']['quote'][0]['close'];
+        $price = end($closeData);
+
         $historicalPerformanceScore = calculateHistoricalPerformanceScore($symbol);
         $analystRecommendationsScore = calculateAnalystRecommendationsScore($symbol);
         $priceMomentumScore = calculatePriceMomentumScore($symbol);
@@ -85,14 +93,47 @@ foreach ($symbols as $symbol) {
         // Calculate the overall score by averaging the individual scores
         $overallScore = ($historicalPerformanceScore + $analystRecommendationsScore + $priceMomentumScore) / 3;
 
-        $symbolScores[$symbol][] = $overallScore;
+        $symbolScores[$symbol] = [
+            'price' => $price,
+            'scores' => $overallScore
+        ];
     } else {
-        echo "Error: Unable to fetch stock data for symbol {$symbol}.";
+        echo "Error: Unable to fetch stock data for symbol {$symbol}.\n";
     }
+
+    // Close the cURL handle
+    //curl_multi_remove_handle($multiHandle, $handle);
+    curl_close($handle);
+}
+
+// Loop through the symbols and create cURL handles
+foreach ($symbols as $symbol) {
+    $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d";
+    $handle = curl_init();
+    curl_setopt($handle, CURLOPT_URL, $url);
+    curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+
+    // Add the cURL handle to the multi-handle
+    curl_multi_add_handle($multiHandle, $handle);
+
+    $curlHandles[$symbol] = $handle;
+}
+
+// Execute the multi-handle requests
+$running = null;
+do {
+    curl_multi_exec($multiHandle, $running);
+} while ($running > 0);
+
+// Process the completed cURL responses
+$symbolScores = [];
+foreach ($curlHandles as $symbol => $handle) {
+    processCurlResponse($handle, $symbol, $symbolScores);
 }
 
 // Sort the symbols by their overall scores
 arsort($symbolScores);
+
 ?>
 
 <!DOCTYPE html>
@@ -111,39 +152,37 @@ arsort($symbolScores);
     </style>
 </head>
 <body>
-    <h1>Live Day Trades</h1>
+<h1>Live Day Trades</h1>
 
-    <table>
+<table>
+    <tr>
+        <th>Symbol</th>
+        <th>Entry Point</th>
+        <th>Stop Loss</th>
+        <th>Profit Target</th>
+        <th>Scores</th>
+    </tr>
+    <?php
+        // Sort the table by scores in ascending order
+        uasort($symbolScores, function ($a, $b) {
+            return $b['scores'] <=> $a['scores'];
+        });
+        ?>
+
+    <?php foreach ($symbolScores as $symbol => $data): ?>
+        <?php $entry = $data['price']; ?>
+        <?php $stopLoss = $entry - ($entry * 0.02); ?>
+        <?php $profitTarget = $entry + ($entry * 0.03); ?>
+
+
         <tr>
-            <th>Symbol</th>
-            <th>Entry Point</th>
-            <th>Stop Loss</th>
-            <th>Profit Target</th>
-            <th>Scores</th>
+            <td><?php echo $symbol; ?></td>
+            <td><?php echo number_format($entry, 5); ?></td>
+            <td><?php echo number_format($stopLoss, 5); ?></td>
+            <td><?php echo number_format($profitTarget, 5); ?></td>
+            <td><?php echo number_format($data['scores'], 2); ?></td>
         </tr>
-
-        <?php foreach ($symbolScores as $symbol => $scores): ?>
-            <?php $price = getStockData($symbol); ?>
-            <?php if ($price !== null): ?>
-                <?php
-                $entry = $price;
-                $stopLoss = $entry - ($entry * 0.02);
-                $profitTarget = $entry + ($entry * 0.03);
-                ?>
-
-                <tr>
-                <td><?php echo $symbol; ?></td>
-                    <td><?php echo number_format($entry, 5); ?></td>
-                    <td><?php echo number_format($stopLoss, 5); ?></td>
-                    <td><?php echo number_format($profitTarget, 5); ?></td>
-                    <td>
-                        <?php foreach ($scores as $score): ?>
-                            <?php echo number_format($score, 2); ?><br>
-                        <?php endforeach; ?>
-                    </td>
-                </tr>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </table>
+    <?php endforeach; ?>
+</table>
 </body>
 </html>
