@@ -34,65 +34,88 @@ function getStockData($symbol) {
     }
 }
 
-// Function to calculate historical performance score
+// Function to calculate historical performance score using MACD
 function calculateHistoricalPerformanceScore($symbol) {
-    // Fetch historical data for the symbol using Yahoo Finance or your preferred data source
+    // Fetch historical data for the symbol using Yahoo Finance
     $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d&range=1y";
-    
+
     // Initialize cURL
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
+
     // Execute the cURL request
     $response = curl_exec($ch);
-    
+
     // Check if cURL request was successful
     if ($response === false) {
         return null;
     }
-    
+
     // Close cURL connection
     curl_close($ch);
-    
+
     // Decode the JSON response
     $data = json_decode($response, true);
-    
+
     // Extract the desired data (closing prices)
     if (isset($data['chart']['result'][0]['indicators']['quote'][0]['close'])) {
         $closeData = $data['chart']['result'][0]['indicators']['quote'][0]['close'];
-        
-        // Calculate the average price change and positive performance
-        $priceChanges = [];
-        $positivePerformanceCount = 0;
-        $previousPrice = null;
-        foreach ($closeData as $price) {
-            if ($previousPrice !== null) {
-                $priceChange = ($price - $previousPrice) / $previousPrice;
-                $priceChanges[] = $priceChange;
-                
-                if ($priceChange > 0) {
-                    $positivePerformanceCount++;
+
+        // Calculate the MACD indicator
+        $macdData = calculateMACD($closeData);
+
+        // Calculate the score based on the MACD values
+        if (!empty($macdData)) {
+            $positiveMACDCount = 0;
+            foreach ($macdData as $macd) {
+                if ($macd > 0) {
+                    $positiveMACDCount++;
                 }
             }
-            $previousPrice = $price;
-        }
-        
-        // Calculate the score based on the average price change and positive performance
-        if (!empty($priceChanges)) {
-            $averagePriceChange = array_sum($priceChanges) / count($priceChanges);
-            
-            // Assign higher scores for positive price changes and consistent positive performance
-            $positivePerformanceScore = ($positivePerformanceCount / count($priceChanges)) * 100;
-            $score = ($averagePriceChange * 0.7 + $positivePerformanceScore * 0.3) * 100;
+
+            // Calculate the score based on the positive MACD values
+            $positiveMACDScore = ($positiveMACDCount / count($macdData)) * 100;
+            $score = $positiveMACDScore;
             // Cap the score at 100
             $score = min($score, 100);
+
             return $score;
         }
     }
-    
+
     return null;
 }
+
+// Function to calculate MACD values
+function calculateMACD($data) {
+    $ema12 = calculateEMA($data, 12);
+    $ema26 = calculateEMA($data, 26);
+
+    $macdLine = array_map(function ($ema12Value, $ema26Value) {
+        return $ema12Value - $ema26Value;
+    }, $ema12, $ema26);
+
+    return $macdLine;
+}
+
+// Function to calculate Exponential Moving Average (EMA)
+function calculateEMA($data, $period) {
+    $multiplier = 2 / ($period + 1);
+    $ema = [];
+
+    // Calculate the initial SMA as the first value
+    $sma = array_slice($data, 0, $period);
+    $ema[] = array_sum($sma) / $period;
+
+    // Calculate EMA for the remaining values
+    for ($i = $period; $i < count($data); $i++) {
+        $ema[] = ($data[$i] - $ema[$i - $period]) * $multiplier + $ema[$i - $period];
+    }
+
+    return $ema;
+}
+
 
 
 // Function to calculate analyst recommendations score
@@ -154,20 +177,18 @@ function calculateAnalystRecommendationsScore($symbol) {
         $score = ($positiveScore * 0.7) - ($negativeScore * 0.3);
 
         // Cap the score between 0 and 100
-        $score = max(0, min($score, 100));
-      //  echo "Analyst Recommendations Score: {$score}\n";
+        $score = min($score, 100);
+       // echo "Analyst Recommendations Score: {$score}\n";
         return $score;
     }
 
     return null;
 }
 
-
-// neeed work here!!
-// Function to calculate price momentum score using AI, MACD, and RSI
+// Function to calculate price momentum score based on RSI
 function calculatePriceMomentumScore($symbol) {
     // Fetch price history for the symbol using Yahoo Finance or your preferred data source
-    $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d";
+    $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d&range=1mo";
 
     // Initialize cURL
     $ch = curl_init();
@@ -192,66 +213,94 @@ function calculatePriceMomentumScore($symbol) {
     if (isset($data['chart']['result'][0]['indicators']['quote'][0]['close'])) {
         $closeData = $data['chart']['result'][0]['indicators']['quote'][0]['close'];
 
-        // Calculate price momentum score based on the closing prices
-        $priceChangePercentage = ($closeData[0] - $closeData[1]) / $closeData[1] * 100;
+        // Calculate the RSI (Relative Strength Index)
+        $rsi = calculateRSI($closeData);
 
-        // Calculate MACD and RSI scores
-        $macdScore = calculateMACDScore($symbol);
-        $rsiScore = calculateRSIScore($symbol);
-
-        // Combine the MACD, RSI, and price change percentage to calculate the final score
-        $score = ($macdScore + $rsiScore + $priceChangePercentage) / 3;
-
-        // Normalize the score to a range of 0 to 100
-        $score = max(0, min(100, $score));
-
+        // Calculate the price momentum score based on RSI
+        $score = calculateScoreFromRSI($rsi);
+        //echo "Price Momentum Score (RSI-based): {$score}\n";
         return $score;
     }
 
     return null;
 }
 
-// Function to calculate MACD score
-function calculateMACDScore($symbol) {
-    // Fetch historical price data for the symbol using Yahoo Finance or your preferred data source
-    // Replace this example code with your actual implementation to fetch historical data
+// Function to calculate RSI (Relative Strength Index)
+function calculateRSI($closeData) {
+    // Set the time period for RSI calculation
+    $timePeriod = 14;
 
-    // Placeholder data for demonstration purposes
-    $priceData = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190];
+    // Calculate the price changes
+    $priceChanges = [];
+    $previousPrice = null;
+    foreach ($closeData as $price) {
+        if ($previousPrice !== null) {
+            $priceChange = $price - $previousPrice;
+            $priceChanges[] = $priceChange;
+        }
+        $previousPrice = $price;
+    }
 
-    // Calculate MACD based on the price data
-    // Replace this example code with your actual MACD calculation logic
+    // Calculate the gains and losses
+    $gains = [];
+    $losses = [];
+    foreach ($priceChanges as $priceChange) {
+        if ($priceChange > 0) {
+            $gains[] = $priceChange;
+            $losses[] = 0;
+        } else {
+            $gains[] = 0;
+            $losses[] = abs($priceChange);
+        }
+    }
 
-    // Placeholder values for demonstration purposes
-    $macdLine = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    $signalLine = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
-    $histogram = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+    // Calculate the average gains and losses
+    $avgGain = array_sum(array_slice($gains, 0, $timePeriod)) / $timePeriod;
+    $avgLoss = array_sum(array_slice($losses, 0, $timePeriod)) / $timePeriod;
 
-    // Calculate the MACD score
-    // You can use different logic based on the MACD values to assign a score
-    $macdScore = end($macdLine) - end($signalLine);
+    // Calculate the initial RSI
+    if ($avgLoss == 0) {
+        $rsi = 100;
+    } else {
+        $rs = $avgGain / $avgLoss;
+        $rsi = 100 - (100 / (1 + $rs));
+    }
 
-    return $macdScore;
-}
+    // Calculate the subsequent RSI values
+    $dataCount = count($closeData);
+    for ($i = $timePeriod; $i < $dataCount; $i++) {
+        $priceChange = $priceChanges[$i - 1];
+        if ($priceChange > 0) {
+            $gain = $priceChange;
+            $loss = 0;
+        } else {
+            $gain = 0;
+            $loss = abs($priceChange);
+        }
 
-// Function to calculate RSI score
-function calculateRSIScore($symbol) {
-    // Fetch historical price data for the symbol using Yahoo Finance or your preferred data source
-    // Replace this example code with your actual implementation to fetch historical data
+        $avgGain = (($avgGain * ($timePeriod - 1)) + $gain) / $timePeriod;
+        $avgLoss = (($avgLoss * ($timePeriod - 1)) + $loss) / $timePeriod;
 
-    // Placeholder data for demonstration purposes
-    $priceData = [100, 110, 120, 130, 140, 150, 160, 170, 180, 190];
+        if ($avgLoss == 0) {
+            $rsiValue = 100;
+        } else {
+            $rs = $avgGain / $avgLoss;
+            $rsiValue = 100 - (100 / (1 + $rs));
+        }
 
-    // Calculate RSI based on the price data
-    // Replace this example code with your actual RSI calculation logic
-
-    // Placeholder value for demonstration purposes
-    $rsi = 60;
+        $rsi = round($rsiValue, 2);
+    }
 
     return $rsi;
 }
 
-
+// Function to calculate the score based on RSI
+function calculateScoreFromRSI($rsi) {
+    // Adjust the RSI score based on a desired scale
+    $score = ($rsi - 50) * 2;
+    $score = max(min($score, 100), 0);
+    return $score;
+}
 
 // Fetch the list of symbols from the USE_20230608.csv file
 $csvFile = 'USE_20230608.csv';
@@ -284,6 +333,8 @@ $multiHandle = curl_multi_init();
 
 // Initialize an array to store the cURL handles
 $curlHandles = [];
+$individualScores = [];
+
 
 // Create a function to process the completed cURL request
 function processCurlResponse($handle, $symbol, &$symbolScores) {
@@ -300,6 +351,7 @@ function processCurlResponse($handle, $symbol, &$symbolScores) {
 
         // Calculate the overall score by averaging the individual scores
         $overallScore = ($historicalPerformanceScore + $analystRecommendationsScore + $priceMomentumScore) / 3;
+        
 
         $symbolScores[$symbol] = [
             'price' => $price,
@@ -386,6 +438,7 @@ if ($sortingOption === 'score') {
             <option value="symbol" <?php echo ($sortingOption === 'symbol') ? 'selected' : ''; ?>>Symbol</option>
             <option value="score" <?php echo ($sortingOption === 'score') ? 'selected' : ''; ?>>Score</option>
             <option value="entry" <?php echo ($sortingOption === 'entry') ? 'selected' : ''; ?>>Entry Price</option>
+            
         </select>
     </form>
 
@@ -395,6 +448,9 @@ if ($sortingOption === 'score') {
             <th>Entry Point</th>
             <th>Stop Loss</th>
             <th>Profit Target</th>
+            <th>Historical Performance Score</th>
+            <th>Analyst Recommendations Score</th>
+            <th>Price Momentum Score</th>
             <th>Scores</th>
         </tr>
         <?php foreach ($symbolScores as $symbol => $data): ?>
@@ -407,6 +463,9 @@ if ($sortingOption === 'score') {
                 <td><?php echo number_format($entry, 5); ?></td>
                 <td><?php echo number_format($stopLoss, 5); ?></td>
                 <td><?php echo number_format($profitTarget, 5); ?></td>
+                <td><?php echo calculateHistoricalPerformanceScore($symbol); ?></td>
+                <td><?php echo calculateAnalystRecommendationsScore($symbol); ?></td>
+                <td><?php echo calculatePriceMomentumScore($symbol); ?></td>
                 <td><?php echo number_format($data['scores'], 2); ?></td>
             </tr>
         <?php endforeach; ?>
