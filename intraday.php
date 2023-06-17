@@ -182,6 +182,17 @@ function calculateAnalystRecommendationsScore($symbol) {
         return $score;
     }
 
+    // Remove symbol from the file if there are no recommendations
+    $csvFile = "USE_20230608.csv";
+    $lines = file($csvFile);
+    $output = [];
+    foreach ($lines as $line) {
+        if (strpos($line, $symbol) === false) {
+            $output[] = $line;
+        }
+    }
+    file_put_contents($csvFile, implode('', $output));
+
     return null;
 }
 
@@ -417,7 +428,7 @@ if ($sortingOption === 'score') {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Live Day Trades</title>
+    <title>Trades</title>
     <style>
         table {
             border-collapse: collapse;
@@ -430,7 +441,7 @@ if ($sortingOption === 'score') {
     </style>
 </head>
 <body>
-    <h1>Live Day Trades</h1>
+    <h1>Trades</h1>
 
     <form action="" method="GET">
         <label for="sort">Sort By:</label>
