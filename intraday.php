@@ -1,5 +1,5 @@
 <?php
-ini_set('max_execution_time', 1000);
+ini_set('max_execution_time', 10000000);
 
 // Check if the form is submitted
 if (isset($_POST['search'])) {
@@ -340,7 +340,7 @@ if (($handle = fopen($csvFile, "r")) !== false) {
 }
 
 // Pagination
-$perPage = 100;
+$perPage = 1000;
 $totalSymbols = count($symbols);
 $totalPages = ceil($totalSymbols / $perPage);
 
@@ -453,7 +453,14 @@ if ($sortingOption === 'score') {
     </style>
 </head>
 <body>
-    <a href="home.php">Home</a>
+    <a href="index.php">Home</a>
+    <br>
+    <?php
+    // Pagination links
+    for ($i = 1; $i <= $totalPages; $i++) {
+        echo "<a href='?page={$i}&sort={$sortingOption}'>Page {$i}</a> | ";
+    }
+    ?>
 
     <h1>Trades</h1>
     <form method="POST" action="" target="_blank">
