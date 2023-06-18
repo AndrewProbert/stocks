@@ -373,10 +373,116 @@ echo "<br>";
   
 
 
-    <p1>Historical Performance Score: <?php echo $historicalPerformanceScore; ?></p1><br>
-    <p1>Analyst Recommendations Score: <?php echo $analystRecommendationsScore; ?></p1><br>
-    <p1>Price Momentum Score: <?php echo $priceMomentumScore; ?></p1><br>
-    <p1>Overall Score: <?php echo $overallScore; ?></p1><br>
+    <style>
+    .score-low {
+        background-color: red;
+        color: white;
+    }
+
+    .score-1 {
+        background-color: #FF3300;
+        color: white;
+    }
+
+    .score-2 {
+        background-color: #FF6600;
+        color: white;
+    }
+
+    .score-3 {
+        background-color: #FF9900;
+        color: black;
+    }
+
+    .score-4 {
+        background-color: #FFCC00;
+        color: black;
+    }
+
+    .score-5 {
+        background-color: #FFFF00;
+        color: black;
+    }
+
+    .score-6 {
+        background-color: #CCFF00;
+        color: black;
+    }
+
+    .score-7 {
+        background-color: #99FF00;
+        color: black;
+    }
+
+    .score-8 {
+        background-color: #66FF00;
+        color: black;
+    }
+
+    .score-9 {
+        background-color: #33FF00;
+        color: black;
+    }
+
+    .score-10 {
+        background-color: #00FF00;
+        color: black;
+    }
+</style>
+
+<table>
+    <tr>
+        <th>Category</th>
+        <th>Score</th>
+    </tr>
+    <tr>
+        <td>Historical Performance</td>
+        <td class="<?php echo getScoreClass($historicalPerformanceScore); ?>"><?php echo $historicalPerformanceScore; ?></td>
+    </tr>
+    <tr>
+        <td>Analyst Recommendations</td>
+        <td class="<?php echo getScoreClass($analystRecommendationsScore); ?>"><?php echo $analystRecommendationsScore; ?></td>
+    </tr>
+    <tr>
+        <td>Price Momentum</td>
+        <td class="<?php echo getScoreClass($priceMomentumScore); ?>"><?php echo $priceMomentumScore; ?></td>
+    </tr>
+    <tr>
+        <td>Overall</td>
+        <td class="<?php echo getScoreClass($overallScore); ?>"><?php echo $overallScore; ?></td>
+    </tr>
+</table>
+
+<?php
+function getScoreClass($score)
+{
+    // Define the score ranges and associated CSS classes
+    $scoreClasses = [
+        'score-low' => [0, 20],
+        'score-1' => [20, 30],
+        'score-2' => [30, 40],
+        'score-3' => [40, 50],
+        'score-4' => [50, 60],
+        'score-5' => [60, 70],
+        'score-6' => [70, 80],
+        'score-7' => [80, 90],
+        'score-8' => [90, 95],
+        'score-9' => [95, 99],
+        'score-10' => [99, 100]
+    ];
+
+    // Find the appropriate CSS class for the given score
+    foreach ($scoreClasses as $class => $range) {
+        if ($score >= $range[0] && $score <= $range[1]) {
+            return $class;
+        }
+    }
+
+    return '';
+}
+?>
+
+
 </body>
 </html>
 

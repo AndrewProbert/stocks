@@ -471,36 +471,129 @@ if ($sortingOption === 'score') {
         </select>
     </form>
 
-    <table>
+    <style>
+    .score-low {
+        background-color: red;
+        color: white;
+    }
+
+    .score-1 {
+        background-color: #FF3300;
+        color: white;
+    }
+
+    .score-2 {
+        background-color: #FF6600;
+        color: white;
+    }
+
+    .score-3 {
+        background-color: #FF9900;
+        color: black;
+    }
+
+    .score-4 {
+        background-color: #FFCC00;
+        color: black;
+    }
+
+    .score-5 {
+        background-color: #FFFF00;
+        color: black;
+    }
+
+    .score-6 {
+        background-color: #CCFF00;
+        color: black;
+    }
+
+    .score-7 {
+        background-color: #99FF00;
+        color: black;
+    }
+
+    .score-8 {
+        background-color: #66FF00;
+        color: black;
+    }
+
+    .score-9 {
+        background-color: #33FF00;
+        color: black;
+    }
+
+    .score-10 {
+        background-color: #00FF00;
+        color: black;
+    }
+</style>
+
+<table>
+    <tr>
+        <th>Symbol</th>
+        <th>Entry Point</th>
+        <th>Stop Loss</th>
+        <th>Profit Target</th>
+        <th>Historical Performance Score</th>
+        <th>Analyst Recommendations Score</th>
+        <th>Price Momentum Score</th>
+        <th>Scores</th>
+    </tr>
+    <?php foreach ($symbolScores as $symbol => $data): ?>
+        <?php
+        $entry = $data['price'];
+        $stopLoss = $entry - ($entry * 0.02);
+        $profitTarget = $entry + ($entry * 0.03);
+
+        $historicalScore = calculateHistoricalPerformanceScore($symbol);
+        $recommendationsScore = calculateAnalystRecommendationsScore($symbol);
+        $momentumScore = calculatePriceMomentumScore($symbol);
+        $scores = $data['scores'];
+        ?>
+
         <tr>
-            <th>Symbol</th>
-            <th>Entry Point</th>
-            <th>Stop Loss</th>
-            <th>Profit Target</th>
-            <th>Historical Performance Score</th>
-            <th>Analyst Recommendations Score</th>
-            <th>Price Momentum Score</th>
-            <th>Scores</th>
+            <td><?php echo $symbol; ?></td>
+            <td><?php echo number_format($entry, 5); ?></td>
+            <td><?php echo number_format($stopLoss, 5); ?></td>
+            <td><?php echo number_format($profitTarget, 5); ?></td>
+            <td class="<?php echo getScoreClass($historicalScore); ?>"><?php echo $historicalScore; ?></td>
+            <td class="<?php echo getScoreClass($recommendationsScore); ?>"><?php echo $recommendationsScore; ?></td>
+            <td class="<?php echo getScoreClass($momentumScore); ?>"><?php echo $momentumScore; ?></td>
+            <td class="<?php echo getScoreClass($scores); ?>"><?php echo number_format($scores, 2); ?></td>
+            <td><a href="stock_info.php?symbol=<?php echo $symbol; ?>">More Info</a></td>
         </tr>
-        <?php foreach ($symbolScores as $symbol => $data): ?>
-            <?php $entry = $data['price']; ?>
-            <?php $stopLoss = $entry - ($entry * 0.02); ?>
-            <?php $profitTarget = $entry + ($entry * 0.03); ?>
+    <?php endforeach; ?>
+</table>
 
-            <tr>
-                <td><?php echo $symbol; ?></td>
-                <td><?php echo number_format($entry, 5); ?></td>
-                <td><?php echo number_format($stopLoss, 5); ?></td>
-                <td><?php echo number_format($profitTarget, 5); ?></td>
-                <td><?php echo calculateHistoricalPerformanceScore($symbol); ?></td>
-                <td><?php echo calculateAnalystRecommendationsScore($symbol); ?></td>
-                <td><?php echo calculatePriceMomentumScore($symbol); ?></td>
-                <td><?php echo number_format($data['scores'], 2); ?></td>
-                <td><?php echo "<td><a href=\"stock_info.php?symbol={$symbol}\">More Info</a></td>"; ?></td>
+<?php
+function getScoreClass($score)
+{
+    // Define the score ranges and associated CSS classes
+    $scoreClasses = [
+        'score-low' => [0, 20],
+        'score-1' => [20, 30],
+        'score-2' => [30, 40],
+        'score-3' => [40, 50],
+        'score-4' => [50, 60],
+        'score-5' => [60, 70],
+        'score-6' => [70, 80],
+        'score-7' => [80, 90],
+        'score-8' => [90, 95],
+        'score-9' => [95, 99],
+        'score-10' => [99, 100]
+    ];
 
-            </tr>
-        <?php endforeach; ?>
-    </table>
+    // Find the appropriate CSS class for the given score
+    foreach ($scoreClasses as $class => $range) {
+        if ($score >= $range[0] && $score <= $range[1]) {
+            return $class;
+        }
+    }
+
+    return '';
+}
+?>
+
 
     <?php
     // Pagination links
