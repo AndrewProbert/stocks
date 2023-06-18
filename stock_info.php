@@ -1,49 +1,32 @@
 <?php
-ini_set('max_execution_time', 1000);
+// stock_info.php
 
-// Check if the form is submitted
-if (isset($_POST['search'])) {
-    // Retrieve the symbol entered by the user
-    $symbol = $_POST['symbol'];
+// Retrieve the symbol from the query parameter
+$symbol = $_GET['symbol'];
 
-    // Redirect the user to the stock_info.php page with the symbol as a parameter
-    header("Location: stock_info.php?symbol={$symbol}");
-    exit;
+// Fetch stock data from Yahoo Finance API
+$url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d";
+$data = file_get_contents($url);
+$jsonData = json_decode($data, true);
+
+// Check if the necessary data is available
+if (isset($jsonData['chart']['result'][0]['meta']['regularMarketPrice'])) {
+    $price = $jsonData['chart']['result'][0]['meta']['regularMarketPrice'];
+    //echo "Live Price: " . $price;
+    //echo "<br>";
 }
 
-// Function to fetch stock data using Yahoo Finance
-function getStockData($symbol) {
-    $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d";
+/*if (isset($jsonData['chart']['result'][0]['meta']['chartPreviousClose'])) {
+    $chartURL = $jsonData['chart']['result'][0]['meta']['chartPreviousClose'];
+    echo "Chart: " . $chartURL;
+    echo "<br>";
+} */
 
-    // Initialize cURL
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    // Execute the cURL request
-    $response = curl_exec($ch);
-
-    // Check if cURL request was successful
-    if ($response === false) {
-        return null;
-    }
-
-    // Close cURL connection
-    curl_close($ch);
-
-    // Decode the JSON response
-    $data = json_decode($response, true);
-
-    // Extract the desired data (closing price)
-    if (isset($data['chart']['result'][0]['indicators']['quote'][0]['close'])) {
-        $closeData = $data['chart']['result'][0]['indicators']['quote'][0]['close'];
-        $price = end($closeData);
-        return $price;
-    } else {
-        return null;
-    }
+if (isset($jsonData['chart']['result'][0]['indicators']['quote'][0]['volume'])) {
+    $stockVolume = $jsonData['chart']['result'][0]['indicators']['quote'][0]['volume'][0];
+    //echo "Stock Volume: " . $stockVolume;
+    //echo "<br>";
 }
-
 // Function to calculate historical performance score using MACD
 function calculateHistoricalPerformanceScore($symbol) {
     // Fetch historical data for the symbol using Yahoo Finance
@@ -323,40 +306,6 @@ function calculateScoreFromRSI($rsi) {
     return $score;
 }
 
-// Fetch the list of symbols from the USE_20230608.csv file
-$csvFile = 'USE_20230608.csv';
-$symbols = [];
-
-if (($handle = fopen($csvFile, "r")) !== false) {
-    while (($data = fgetcsv($handle, 1000, ",")) !== false) {
-        if ($data[0] !== 'Symbol' && !strpos($data[0], '-') && !strpos($data[0], '.')) {
-            $symbols[] = $data[0];
-        }
-    }
-    fclose($handle);
-} else {
-    echo "Error: Unable to open CSV file.";
-    exit;
-}
-
-// Pagination
-$perPage = 100;
-$totalSymbols = count($symbols);
-$totalPages = ceil($totalSymbols / $perPage);
-
-$page = isset($_GET['page']) ? intval($_GET['page']) : 1;
-$startIndex = ($page - 1) * $perPage;
-$endIndex = min($startIndex + $perPage, $totalSymbols);
-$symbolsPerPage = array_slice($symbols, $startIndex, $endIndex - $startIndex);
-
-// Prepare the cURL multi-handle
-$multiHandle = curl_multi_init();
-
-// Initialize an array to store the cURL handles
-$curlHandles = [];
-$individualScores = [];
-
-
 // Create a function to process the completed cURL request
 function processCurlResponse($handle, $symbol, &$symbolScores) {
     $response = curl_multi_getcontent($handle);
@@ -385,130 +334,52 @@ function processCurlResponse($handle, $symbol, &$symbolScores) {
     // Close the cURL handle
     curl_close($handle);
 }
+$historicalPerformanceScore = calculateHistoricalPerformanceScore($symbol);
+$analystRecommendationsScore = calculateAnalystRecommendationsScore($symbol);
+$priceMomentumScore = calculatePriceMomentumScore($symbol);
+$overallScore = ($historicalPerformanceScore + $analystRecommendationsScore + $priceMomentumScore) / 3;
 
-// Loop through the symbols on the current page and create cURL handles
-foreach ($symbolsPerPage as $symbol) {
-    $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$symbol}?interval=1d";
-    $handle = curl_init();
-    curl_setopt($handle, CURLOPT_URL, $url);
-    curl_setopt($handle, CURLOPT_RETURNTRANSFER, true);
+// Display stock symbol
+/*
+echo "Stock Symbol: " . $symbol;
+echo "<br>";
+echo $historicalPerformanceScore;
+echo "<br>";
 
-    // Add the cURL handle to the multi-handle
-    curl_multi_add_handle($multiHandle, $handle);
+echo $analystRecommendationsScore;
+echo "<br>";
 
-    $curlHandles[$symbol] = $handle;
-}
+echo $priceMomentumScore;
+echo "<br>";
 
-// Execute the multi-handle requests
-$running = null;
-do {
-    curl_multi_exec($multiHandle, $running);
-} while ($running > 0);
+echo $overallScore;
+echo "<br>";
+*/
 
-// Process the completed cURL responses
-$symbolScores = [];
-foreach ($curlHandles as $symbol => $handle) {
-    processCurlResponse($handle, $symbol, $symbolScores);
-}
 
-// Sort the symbols by their overall scores
-asort($symbolScores);
-
-// Display the table
-?>
-<?php
-// Check if a sorting option is selected
-$sortingOption = isset($_GET['sort']) ? $_GET['sort'] : 'symbol';
-
-// Sort the symbols based on the selected option
-if ($sortingOption === 'score') {
-    uasort($symbolScores, function($a, $b) {
-        return $b['scores'] - $a['scores'];
-    });
-} elseif ($sortingOption === 'entry') {
-    uasort($symbolScores, function($a, $b) {
-        return $a['price'] - $b['price'];
-    });
-} else {
-    ksort($symbolScores);
-}
-
-// Display the table
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trades</title>
+    <title><?php echo $symbol; ?> Stock Analysis</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-
-    <style>
-        table {
-            border-collapse: collapse;
-        }
-
-        table, th, td {
-            border: 1px solid black;
-            padding: 5px;
-        }
-    </style>
+    <line rel="stylesheet" type="text/css" href="chart.css">
 </head>
 <body>
-    <a href="home.php">Home</a>
+    <h1><?php echo $symbol; ?> Analysis</h1>
+    <p1><?php echo "Price: " . $price; ?></p1><br>
+    <p1><?php echo "Volume: " . $stockVolume; ?></p1><br>
 
-    <h1>Trades</h1>
-    <form method="POST" action="" target="_blank">
-        <input type="text" name="symbol" placeholder="Enter stock symbol">
-        <input type="submit" name="search" value="Search">
-    </form>
+  
 
-    <form action="" method="GET" >
-        <label for="sort">Sort By:</label>
-        <select name="sort" id="sort" onchange="this.form.submit()">
-            <option value="symbol" <?php echo ($sortingOption === 'symbol') ? 'selected' : ''; ?>>Symbol</option>
-            <option value="score" <?php echo ($sortingOption === 'score') ? 'selected' : ''; ?>>Score</option>
-            <option value="entry" <?php echo ($sortingOption === 'entry') ? 'selected' : ''; ?>>Entry Price</option>
-            
-        </select>
-    </form>
 
-    <table>
-        <tr>
-            <th>Symbol</th>
-            <th>Entry Point</th>
-            <th>Stop Loss</th>
-            <th>Profit Target</th>
-            <th>Historical Performance Score</th>
-            <th>Analyst Recommendations Score</th>
-            <th>Price Momentum Score</th>
-            <th>Scores</th>
-        </tr>
-        <?php foreach ($symbolScores as $symbol => $data): ?>
-            <?php $entry = $data['price']; ?>
-            <?php $stopLoss = $entry - ($entry * 0.02); ?>
-            <?php $profitTarget = $entry + ($entry * 0.03); ?>
-
-            <tr>
-                <td><?php echo $symbol; ?></td>
-                <td><?php echo number_format($entry, 5); ?></td>
-                <td><?php echo number_format($stopLoss, 5); ?></td>
-                <td><?php echo number_format($profitTarget, 5); ?></td>
-                <td><?php echo calculateHistoricalPerformanceScore($symbol); ?></td>
-                <td><?php echo calculateAnalystRecommendationsScore($symbol); ?></td>
-                <td><?php echo calculatePriceMomentumScore($symbol); ?></td>
-                <td><?php echo number_format($data['scores'], 2); ?></td>
-                <td><?php echo "<td><a href=\"stock_info.php?symbol={$symbol}\">More Info</a></td>"; ?></td>
-
-            </tr>
-        <?php endforeach; ?>
-    </table>
-
-    <?php
-    // Pagination links
-    for ($i = 1; $i <= $totalPages; $i++) {
-        echo "<a href='?page={$i}&sort={$sortingOption}'>Page {$i}</a> | ";
-    }
-    ?>
+    <p1>Historical Performance Score: <?php echo $historicalPerformanceScore; ?></p1><br>
+    <p1>Analyst Recommendations Score: <?php echo $analystRecommendationsScore; ?></p1><br>
+    <p1>Price Momentum Score: <?php echo $priceMomentumScore; ?></p1><br>
+    <p1>Overall Score: <?php echo $overallScore; ?></p1><br>
 </body>
 </html>
+
+
 
 
