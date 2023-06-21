@@ -356,12 +356,26 @@ echo $overallScore;
 echo "<br>";
 */
 
+// Check if the form is submitted
+if (isset($_POST['search'])) {
+    // Retrieve the symbol entered by the user
+    $symbol = $_POST['symbol'];
+
+    // Redirect the user to the stock_info.php page with the symbol as a parameter
+    header("Location: stock_info.php?symbol={$symbol}");
+    exit;
+}
+
 
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title><?php echo $symbol; ?> Stock Analysis</title>
+        <form method="POST" action="" target="">
+        <input type="text" name="symbol" placeholder="Enter stock symbol">
+        <input type="submit" name="search" value="Search">
+    </form>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
     <line rel="stylesheet" type="text/css" href="chart.css">
 </head>
@@ -481,6 +495,30 @@ function getScoreClass($score)
     return '';
 }
 ?>
+
+
+<p1>Note Taking</p1>
+<label for="stock-symbol">Stock Symbol:</label>
+<input type="text" id="stock-symbol" value="<?php echo $symbol; ?>">
+
+<textarea id="notes" rows="10" cols="50"></textarea>
+
+<script>
+  // Retrieve the notes for the specific stock from local storage if available
+  document.getElementById('stock-symbol').addEventListener('input', function() {
+    const stockSymbol = this.value.toUpperCase();
+    const savedNotes = localStorage.getItem(`notes_${stockSymbol}`);
+    document.getElementById('notes').value = savedNotes || '';
+  });
+
+  // Save the notes for the specific stock whenever there is a change
+  document.getElementById('notes').addEventListener('input', function() {
+    const stockSymbol = document.getElementById('stock-symbol').value.toUpperCase();
+    const notes = this.value;
+    localStorage.setItem(`notes_${stockSymbol}`, notes);
+  });
+</script>
+
 
 
 </body>
