@@ -193,7 +193,7 @@ function calculateAnalystRecommendationsScore($symbol) {
     }
 
     // Remove symbol from the file if there are no recommendations
-    $csvFile = "USE_20230608.csv";
+    $csvFile = "options.csv";
     $lines = file($csvFile);
     $output = [];
     foreach ($lines as $line) {
@@ -323,8 +323,8 @@ function calculateScoreFromRSI($rsi) {
     return $score;
 }
 
-// Fetch the list of symbols from the USE_20230608.csv file
-$csvFile = 'USE_20230608.csv';
+// Fetch the list of symbols from the options.csv file
+$csvFile = 'options.csv';
 $symbols = [];
 
 if (($handle = fopen($csvFile, "r")) !== false) {
@@ -366,18 +366,35 @@ function processCurlResponse($handle, $symbol, &$symbolScores) {
         $closeData = $stockData['chart']['result'][0]['indicators']['quote'][0]['close'];
         $price = end($closeData);
 
-        $historicalPerformanceScore = calculateHistoricalPerformanceScore($symbol);
-        $analystRecommendationsScore = calculateAnalystRecommendationsScore($symbol);
-        $priceMomentumScore = calculatePriceMomentumScore($symbol);
+        // Check if options chain exists
+        if (optionsChainExists($symbol)) {
+            $historicalPerformanceScore = calculateHistoricalPerformanceScore($symbol);
+            $analystRecommendationsScore = calculateAnalystRecommendationsScore($symbol);
+            $priceMomentumScore = calculatePriceMomentumScore($symbol);
 
-        // Calculate the overall score by averaging the individual scores
-        $overallScore = ($historicalPerformanceScore + $analystRecommendationsScore + $priceMomentumScore) / 3;
-        
+            // Calculate the overall score by averaging the individual scores
+            $overallScore = ($historicalPerformanceScore + $analystRecommendationsScore + $priceMomentumScore) / 3;
 
-        $symbolScores[$symbol] = [
-            'price' => $price,
-            'scores' => $overallScore
-        ];
+            $symbolScores[$symbol] = [
+                'price' => $price,
+                'scores' => $overallScore
+            ];
+        } else {
+            echo "Options chain not found for symbol {$symbol}.\n";
+            $csvFile = "options.csv";
+            $lines = file($csvFile);
+            $output = [];
+            foreach ($lines as $line) {
+                if (strpos($line, $symbol) === false) {
+                    $output[] = $line;
+                }
+            }
+            file_put_contents($csvFile, implode('', $output));
+
+            return null;
+
+
+        }
     } else {
         echo "Error: Unable to fetch stock data for symbol {$symbol}.\n";
     }
@@ -385,6 +402,32 @@ function processCurlResponse($handle, $symbol, &$symbolScores) {
     // Close the cURL handle
     curl_close($handle);
 }
+
+function optionsChainExists($symbol) {
+    $url = "https://query2.finance.yahoo.com/v7/finance/options/{$symbol}";
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+
+    if (isset($data['optionChain']['result'])) {
+        $options = $data['optionChain']['result'][0]['options'];
+        
+        foreach ($options as $optionType => $optionData) {
+            if (count($optionData) > 0) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
 
 // Loop through the symbols on the current page and create cURL handles
 foreach ($symbolsPerPage as $symbol) {
@@ -438,7 +481,7 @@ if ($sortingOption === 'score') {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trades</title>
+    <title>Options</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 
     <style>
@@ -463,7 +506,7 @@ if ($sortingOption === 'score') {
     }
     ?>
 
-    <h1>Trades</h1>
+    <h1>Options</h1>
     <form method="POST" action="" target="_blank">
         <input type="text" name="symbol" placeholder="Enter stock symbol">
         <input type="submit" name="search" value="Search">

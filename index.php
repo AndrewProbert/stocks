@@ -12,7 +12,7 @@
     <p>Select Scanner Type</p>
     <a href="premarket.php">Pre-Market</a>
     <a href="intraday.php">Intraday</a>
-    <a href="afterhours.php">After Hours</a>
+    <a href="options.php">Options</a>
 
 
 
