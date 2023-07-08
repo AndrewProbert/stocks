@@ -13,7 +13,6 @@
     <a href="premarket.php">Pre-Market</a>
     <a href="intraday.php">Intraday</a>
     <a href="options.php">Options</a>
-    <a href="gld.php">GLD</a>
 
 
 
