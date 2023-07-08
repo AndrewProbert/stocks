@@ -509,29 +509,28 @@ function getScoreClass($score)
     return '';
 }
 ?>
+<br><br>
+<?php
+session_start();
+$_POST['stock_symbol'] = $symbol;
+echo '<h2>Notes for ' . $_POST['stock_symbol'] . '</h2>';
 
+if (isset($_POST['stock_symbol']) && isset($_POST['note'])) {
+    $_SESSION[$_POST['stock_symbol']] = $_POST['note'];
+}
+?>
 
-<p1>Note Taking</p1>
-<label for="stock-symbol">Stock Symbol:</label>
-<input type="text" id="stock-symbol" value="<?php echo $symbol; ?>">
+<form method="post">
+    <textarea name="note" placeholder="Note"><?php if (isset($_SESSION[$_POST['stock_symbol']])) { echo $_SESSION[$_POST['stock_symbol']]; } ?></textarea>
+    <button type="submit">Save Note</button>
+</form>
 
-<textarea id="notes" rows="10" cols="50"></textarea>
-
-<script>
-  // Retrieve the notes for the specific stock from local storage if available
-  document.getElementById('stock-symbol').addEventListener('input', function() {
-    const stockSymbol = this.value.toUpperCase();
-    const savedNotes = localStorage.getItem(`notes_${stockSymbol}`);
-    document.getElementById('notes').value = savedNotes || '';
-  });
-
-  // Save the notes for the specific stock whenever there is a change
-  document.getElementById('notes').addEventListener('input', function() {
-    const stockSymbol = document.getElementById('stock-symbol').value.toUpperCase();
-    const notes = this.value;
-    localStorage.setItem(`notes_${stockSymbol}`, notes);
-  });
-</script>
+<?php
+if (isset($_SESSION[$_POST['stock_symbol']])) {
+    echo '<h2>Review Notes for ' . $_POST['stock_symbol'] . '</h2>';
+    echo '<p>' . $_SESSION[$_POST['stock_symbol']] . '</p>';
+}
+?>
 
 
 

@@ -473,9 +473,7 @@ if ($sortingOption === 'score') {
     </nav>
   </header>
   <br>
-    <br>
-    <a href="index.php">Home</a>
-    <br>
+  
     <?php
     // Pagination links
     for ($i = 1; $i <= $totalPages; $i++) {
