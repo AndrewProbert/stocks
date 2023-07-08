@@ -372,14 +372,28 @@ if (isset($_POST['search'])) {
 <html>
 <head>
     <title><?php echo $symbol; ?> Stock Analysis</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    
+<body>
+<header>
+    <nav>
+      <div class="logo">
+        <a href="index.php"> <img src="gloptionW.png" alt="Logo"></a>
         <form method="POST" action="" target="">
         <input type="text" name="symbol" placeholder="Enter stock symbol">
         <input type="submit" name="search" value="Search">
     </form>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-    <line rel="stylesheet" type="text/css" href="chart.css">
-</head>
-<body>
+      </div>
+      <ul class="navbar">
+        <li><a href="intraday.php">Track</a></li>
+        <li><a href="options.php">Options</a></li>
+        <li><a href="http://localhost/gld/index.php">Gold Scanner</a></li>
+        <li><a href="news.php">News</a></li>
+      </ul>
+    </nav>
+  </header>
+  <br>
     <h1><?php echo $symbol; ?> Analysis</h1>
     <p1><?php echo "Price: " . $price; ?></p1><br>
     <p1><?php echo "Volume: " . $stockVolume; ?></p1><br>

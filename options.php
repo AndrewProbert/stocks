@@ -482,6 +482,8 @@ if ($sortingOption === 'score') {
 <html>
 <head>
     <title>Options</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
 
     <style>
@@ -496,9 +498,25 @@ if ($sortingOption === 'score') {
     </style>
 </head>
 <body>
-    <br>
-    <a href="index.php">Home</a>
-    <br>
+<header>
+    <nav>
+      <div class="logo">
+        <a href="index.php"> <img src="gloptionW.png" alt="Logo"></a>
+        <form method="POST" action="" target="">
+        <input type="text" name="symbol" placeholder="Enter stock symbol">
+        <input type="submit" name="search" value="Search">
+    </form>
+      </div>
+      <ul class="navbar">
+        <li><a href="intraday.php">Track</a></li>
+        <li><a href="options.php">Options</a></li>
+        <li><a href="http://localhost/gld/index.php">Gold Scanner</a></li>
+        <li><a href="news.php">News</a></li>
+      </ul>
+    </nav>
+  </header>
+  <br>
+    
     <?php
     // Pagination links
     for ($i = 1; $i <= $totalPages; $i++) {
@@ -507,10 +525,7 @@ if ($sortingOption === 'score') {
     ?>
 
     <h1>Options</h1>
-    <form method="POST" action="" target="_blank">
-        <input type="text" name="symbol" placeholder="Enter stock symbol">
-        <input type="submit" name="search" value="Search">
-    </form>
+  
 
     <form action="" method="GET" >
         <label for="sort">Sort By:</label>

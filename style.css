@@ -1,0 +1,80 @@
+/* Reset the default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    
+  }
+  
+  /* Set the font family and color for the whole document */
+  body {
+    font-family: Arial, sans-serif;
+    color: #333;
+  }
+  
+  /* Style the nav element */
+  nav {
+    display: flex;
+    justify-content: space-between;
+    position: fixed;
+    top: 0;
+    left: 0;        
+    width: 100%;
+    background-color: #100055; /* added this line */
+  }
+  
+  /* Style the logo */
+  .logo {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    flex: 1; /* added this line */
+  }
+  
+  .logo img {
+    width: 100px;
+    height: auto;
+  }
+  
+  /* Style the form */
+  form {
+    display: flex;
+  }
+  
+  form input[type="text"] {
+    border: none;
+    outline: none;
+    padding: 5px;
+  }
+  
+  form input[type="submit"] {
+    border: none;
+    outline: none;
+    background-color: #0abcf1;
+    color: white;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  /* Style the navbar */
+  .navbar {
+    display: flex;
+    list-style-type: none;
+  }
+  
+  .navbar li {
+    margin-left: 20px;
+  }
+  
+  .navbar li a {
+    display: block;
+    text-decoration: none;
+    color: #0abcf1;
+    padding: 10px;
+  }
+  
+  .navbar li a:hover {
+    background-color: #000000;
+    color: white;
+  }
+  
