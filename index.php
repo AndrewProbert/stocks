@@ -15,7 +15,7 @@
       <div class="logo">
         <a href="index.php"> <img src="gloptionW.png" alt="Logo"></a>
         <form method="POST" action="" target="">
-        <input type="text" name="symbol" placeholder="Enter stock symbol">
+        <input type="text"  name="symbol" placeholder="Enter stock symbol" >
         <input type="submit" name="search" value="Search">
     </form>
       </div>
@@ -80,7 +80,7 @@ if (isset($_GET['search'])) {
     // Check if the form is submitted
 if (isset($_POST['search'])) {
     // Retrieve the symbol entered by the user
-    $symbol = $_POST['symbol'];
+    $symbol = strtoupper($_POST['symbol']);
 
     // Redirect the user to the stock_info.php page with the symbol as a parameter
     header("Location: stock_info.php?symbol={$symbol}");
