@@ -367,6 +367,52 @@ if (isset($_POST['search'])) {
 }
 
 
+
+// Define the CSV file path
+$csvFile = "stock_scores.csv";
+
+// Function to read the existing data from the CSV file
+function readCSVFile($file)
+{
+    $data = [];
+    if (($handle = fopen($file, "r")) !== false) {
+        while (($row = fgetcsv($handle, 1000, ",")) !== false) {
+            $data[] = $row;
+        }
+        fclose($handle);
+    }
+    return $data;
+}
+
+// Function to write data to the CSV file
+function writeCSVFile($file, $data)
+{
+    if (($handle = fopen($file, "w")) !== false) {
+        foreach ($data as $row) {
+            fputcsv($handle, $row);
+        }
+        fclose($handle);
+    }
+}
+
+// Read the existing data from the CSV file
+$stockScoresData = readCSVFile($csvFile);
+
+// Before displaying the overall score, store the current date and overall score in a new row
+$stockScoresData[] = [date("Y-m-d"), $symbol, $overallScore];
+
+// Write the updated array back to the CSV file
+writeCSVFile($csvFile, $stockScoresData);
+
+// ...
+?>
+
+
+
+
+
+
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -531,6 +577,69 @@ if (isset($_SESSION[$_POST['stock_symbol']])) {
     echo '<p>' . $_SESSION[$_POST['stock_symbol']] . '</p>';
 }
 ?>
+
+
+
+<!-- Add the necessary script tags for Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Add a canvas element with a unique ID to render the chart -->
+<canvas id="stockChart"></canvas>
+
+<script>
+// Retrieve historical data from the CSV file
+<?php
+// Read the existing data from the CSV file
+$stockScoresData = readCSVFile($csvFile);
+
+// Extract the necessary data (date and overall score) for the chart
+$chartData = [];
+foreach ($stockScoresData as $row) {
+    if ($row[1] === $symbol) {
+        $chartData[] = ['date' => $row[0], 'score' => $row[2]];
+    }
+}
+
+// Convert the chart data to JSON for JavaScript usage
+$chartDataJSON = json_encode($chartData);
+?>
+
+// Initialize the chart using Chart.js
+var ctx = document.getElementById('stockChart').getContext('2d');
+var stockChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: <?php echo $chartDataJSON ?>.map(data => data.date),
+        datasets: [{
+            label: 'Overall Score',
+            data: <?php echo $chartDataJSON ?>.map(data => data.score),
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Date'
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Overall Score'
+                }
+            }
+        }
+    }
+});
+</script>
+
 
 
 
