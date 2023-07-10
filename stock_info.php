@@ -436,6 +436,8 @@ writeCSVFile($csvFile, $stockScoresData);
         <li><a href="options.php">Options</a></li>
         <li><a href="http://localhost/gld/index.php">Gold Scanner</a></li>
         <li><a href="news.php">News</a></li>
+        <li><a href="weighting.php">Weighting Tool</a></li>
+
       </ul>
     </nav>
   </header>
