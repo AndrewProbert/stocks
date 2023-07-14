@@ -366,8 +366,6 @@ if (isset($_POST['search'])) {
     exit;
 }
 
-
-
 // Define the CSV file path
 $csvFile = "stock_scores.csv";
 
@@ -398,13 +396,35 @@ function writeCSVFile($file, $data)
 // Read the existing data from the CSV file
 $stockScoresData = readCSVFile($csvFile);
 
-// Before displaying the overall score, store the current date and overall score in a new row
-$stockScoresData[] = [date("Y-m-d"), $symbol, $overallScore];
+// Find the existing score for the current date and symbol
+$currentDate = date("Y-m-d");
+$existingScore = null;
 
-// Write the updated array back to the CSV file
-writeCSVFile($csvFile, $stockScoresData);
+foreach ($stockScoresData as $index => $row) {
+    if ($row[0] == $currentDate && $row[1] == $symbol) {
+        $existingScore = $row[2];
+        break;
+    }
+}
 
-// ...
+// Compare the existing score with the new score
+$newScore = $overallScore; // Replace with the new score you have
+
+if ($existingScore === null || $newScore > $existingScore) {
+    // Update the score if it doesn't exist or the new score is higher
+    $updatedRow = [$currentDate, $symbol, $newScore];
+
+    if ($existingScore === null) {
+        // Append the new row if the score doesn't exist for the current date and symbol
+        $stockScoresData[] = $updatedRow;
+    } else {
+        // Replace the existing row with the updated score
+        $stockScoresData[$index] = $updatedRow;
+    }
+
+    // Write the updated array back to the CSV file
+    writeCSVFile($csvFile, $stockScoresData);
+}
 ?>
 
 

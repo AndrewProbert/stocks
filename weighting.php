@@ -9,30 +9,6 @@
         header("Location: stock_info.php?symbol={$symbol}");
         exit;
     }
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -114,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $price = getStockPrice($stock);
         if ($price) {
             $stockPrices[$stock] = $price;
+        }else {
+            echo "Could not fetch $stock price";
         }
     }
 
