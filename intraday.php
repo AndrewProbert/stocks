@@ -191,7 +191,7 @@ function calculateAnalystRecommendationsScore($symbol) {
        // echo "Analyst Recommendations Score: {$score}\n";
         return $score;
     }
-
+/*
     // Remove symbol from the file if there are no recommendations
     $csvFile = "USE_20230608.csv";
     $lines = file($csvFile);
@@ -202,6 +202,7 @@ function calculateAnalystRecommendationsScore($symbol) {
         }
     }
     file_put_contents($csvFile, implode('', $output));
+    */  
 
     return null;
 }
